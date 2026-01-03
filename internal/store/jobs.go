@@ -36,6 +36,36 @@ func (s *Store) CreateJob(
 	return err
 }
 
+func (s *Store) CancelJob(
+	ctx context.Context,
+	jobID uuid.UUID,
+) error {
+	return s.WithTransaction(ctx, func(transaction pgx.Tx) error {
+		commandTag, err := transaction.Exec(
+			ctx,
+			`
+			UPDATE jobs
+			SET state = 'CANCELLED',
+				cancelled_at = now(),
+				updated_at = now()
+			WHERE id = $1
+				AND state NOT IN ('COMPLETED', 'CANCELLED')
+			`,
+			jobID,
+		)
+
+		if err != nil {
+			return err
+		}
+
+		if commandTag.RowsAffected() == 0 {
+			return ErrInvalidStateTransition
+		}
+
+		return nil
+	})
+}
+
 func transitionJobState(
 	ctx context.Context,
 	transaction pgx.Tx,

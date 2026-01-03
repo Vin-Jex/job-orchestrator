@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/google/uuid"
 )
 
@@ -51,4 +52,30 @@ func (s *Server) handleCreateJob(
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(writer).Encode(response)
+}
+
+func (s *Server) handleCancelJob(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	jobIDParam := request.PathValue("jobID")
+	jobID, err := uuid.Parse(jobIDParam)
+
+	if err != nil {
+		http.Error(writer, "Invalid job id", http.StatusBadRequest)
+		return
+	}
+
+	err = s.store.CancelJob(request.Context(), jobID)
+	if err != nil {
+		if err == store.ErrInvalidStateTransition {
+			http.Error(writer, "Job cannot be cancelled", http.StatusConflict)
+			return
+		}
+
+		http.Error(writer, "Failed to cancel job", http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
