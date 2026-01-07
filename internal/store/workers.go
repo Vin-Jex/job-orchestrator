@@ -29,3 +29,36 @@ func (s *Store) UpsertWorkerHeartbeat(
 
 	return err
 }
+
+func (s *Store) RegisterWorker(
+	ctx context.Context,
+	workerID uuid.UUID,
+	capacity int,
+) error {
+	_, err := s.connectionPool.Exec(ctx,
+		`
+		INSERT INTO workers (id, capacity, last_heartbeat)
+		VALUES ($1, $2, now())
+		ON CONFLICT (id) DO UPDATE
+		SET capacity = EXCLUDED.capacity,
+			last_heartbeat = now()
+		`,
+		workerID,
+		capacity,
+	)
+	return err
+}
+
+func (s *Store) HeartbeatWorker(
+	ctx context.Context,
+	workerID uuid.UUID,
+) error {
+	_, err := s.connectionPool.Exec(ctx, `
+	UPDATE workers
+	SET last_heartbeat = now()
+	WHERE id = $1
+	`,
+		workerID,
+	)
+	return err
+}
