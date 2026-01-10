@@ -225,6 +225,7 @@ func (s *Store) MarkJobFailed(
 	ctx context.Context,
 	jobID uuid.UUID,
 	errMessage string,
+	retryable bool,
 ) error {
 	_, err := s.connectionPool.Exec(
 		ctx,
@@ -232,12 +233,14 @@ func (s *Store) MarkJobFailed(
 			UPDATE jobs
 			SET state = 'FAILED',
 				last_error = $2,
+				retryable = $3,
 				updated_at = now()
 			WHERE id = $1
 				AND state = 'RUNNING'
 		`,
 		jobID,
 		errMessage,
+		retryable,
 	)
 	return err
 }
