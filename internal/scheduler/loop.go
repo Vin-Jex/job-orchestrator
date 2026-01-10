@@ -34,6 +34,20 @@ func (s *Scheduler) Run(ctx context.Context) {
 }
 
 func (s *Scheduler) tryScheduleOnce(ctx context.Context) {
+	totalCapacity, err := s.store.GetTotalWorkerCapacity(ctx)
+	if err != nil {
+		return
+	}
+
+	runningJobs, err := s.store.CountRunningJobs(ctx)
+	if err != nil {
+		return
+	}
+
+	if runningJobs >= totalCapacity {
+		s.logger.Info("scheduler back pressure", "running_jobs", runningJobs, "worker_capacity", totalCapacity)
+		return
+	}
 	jobID, _, err := s.store.AcquireJobLease(
 		ctx,
 		s.id,
