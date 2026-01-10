@@ -44,7 +44,7 @@ func (s *Server) handleCreateJob(
 		return
 	}
 
-	s.logger.Info("job created", "job_id", jobID.String())
+	LoggerFromContext(request.Context()).Info("job created", "job_id", jobID.String())
 	response := CreateJobResponse{
 		JobID: jobID.String(),
 		State: "PENDING",
@@ -77,7 +77,7 @@ func (s *Server) handleCancelJob(
 		http.Error(writer, "Failed to cancel job", http.StatusInternalServerError)
 		return
 	}
-	s.logger.Info("job cancelled", "job_id", jobID.String())
+	LoggerFromContext(request.Context()).Info("job cancelled", "job_id", jobID.String())
 
 	writer.WriteHeader(http.StatusOK)
 }
