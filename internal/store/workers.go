@@ -62,3 +62,19 @@ func (s *Store) HeartbeatWorker(
 	)
 	return err
 }
+
+func (s *Store) GetTotalWorkerCapacity(ctx context.Context) (int, error) {
+	row := s.connectionPool.QueryRow(
+		ctx,
+		`
+			SELECT COALESCE(SUM(capacity), 0)
+			FROM workers
+			WHERE last_heartbeat > now() - interval '15 seconds'
+			`,
+	)
+	var capacity int
+	if err := row.Scan(&capacity); err != nil {
+		return 0, err
+	}
+	return capacity, nil
+}
