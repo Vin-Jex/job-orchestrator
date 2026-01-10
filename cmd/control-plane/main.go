@@ -10,10 +10,13 @@ import (
 	"time"
 
 	"github.com/Vin-Jex/job-orchestrator/internal/api"
+	"github.com/Vin-Jex/job-orchestrator/internal/observability"
 	"github.com/Vin-Jex/job-orchestrator/internal/store"
 )
 
 func main() {
+	logger := observability.NewLogger("control-plane")
+
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGINT,
@@ -32,7 +35,7 @@ func main() {
 	}
 	defer storeLayer.Close()
 
-	server := api.NewServer(storeLayer)
+	server := api.NewServer(storeLayer, logger)
 
 	httpServer := &http.Server{
 		Addr:         ":8080",

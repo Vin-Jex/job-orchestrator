@@ -9,11 +9,13 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/Vin-Jex/job-orchestrator/internal/observability"
 	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/Vin-Jex/job-orchestrator/internal/worker"
 )
 
 func main() {
+	logger := observability.NewLogger("worker")
 	workerID := uuid.New()
 
 	ctx, stop := signal.NotifyContext(
@@ -34,7 +36,7 @@ func main() {
 	}
 	defer storeLayer.Close()
 
-	w := worker.New(workerID, 4, storeLayer)
+	w := worker.New(workerID, 4, storeLayer, logger)
 
 	if err := w.Run(ctx); err != nil {
 		log.Fatal(err)

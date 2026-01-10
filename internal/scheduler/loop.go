@@ -22,6 +22,7 @@ func (s *Scheduler) Run(ctx context.Context) {
 			s.tryScheduleOnce(ctx)
 		case <-recoveryTicker.C:
 			_ = s.store.RecoverExpiredLeases(ctx, time.Now())
+			s.logger.Info("expired lease recovered", "job_id", s.id.String())
 		}
 	}
 }
@@ -36,6 +37,8 @@ func (s *Scheduler) tryScheduleOnce(ctx context.Context) {
 		// No job acquired is NOT an error condition
 		return
 	}
+
+	s.logger.Info("lease acquired", "job_id", s.id.String())
 
 	// Lease acquired successfully.
 	// At this stage we do nothing else.

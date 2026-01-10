@@ -1,20 +1,23 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/Vin-Jex/job-orchestrator/internal/store"
 )
 
 type Server struct {
-	store *store.Store
-	mux   *http.ServeMux
+	store  *store.Store
+	mux    *http.ServeMux
+	logger *slog.Logger
 }
 
-func NewServer(storeLayer *store.Store) *Server {
+func NewServer(storeLayer *store.Store, logger *slog.Logger) *Server {
 	server := &Server{
 		store: storeLayer,
 		mux:   http.NewServeMux(),
+		logger: logger,
 	}
 
 	server.registerRoutes()

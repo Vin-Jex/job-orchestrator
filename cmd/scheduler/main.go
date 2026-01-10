@@ -7,12 +7,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Vin-Jex/job-orchestrator/internal/observability"
 	"github.com/Vin-Jex/job-orchestrator/internal/scheduler"
 	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/google/uuid"
 )
 
 func main() {
+	logger := observability.NewLogger("scheduler")
+
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGINT,
@@ -36,6 +39,7 @@ func main() {
 	s := scheduler.New(
 		schedulerID,
 		storeLayer,
+		logger,
 	)
 
 	go s.Run(ctx)
