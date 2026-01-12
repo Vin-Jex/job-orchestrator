@@ -7,6 +7,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// IMPORTANT:
+// All job state transitions MUST go through transitionJobState.
+// Any direct UPDATE of jobs.state outside this gate is a correctness bug.
+
 type Store struct {
 	connectionPool *pgxpool.Pool
 }
