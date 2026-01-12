@@ -283,3 +283,60 @@ func (s *Store) CountRunningJobs(ctx context.Context) (int, error) {
 
 	return count, nil
 }
+
+func (s *Store) RetryJobIfAllowed(
+	ctx context.Context,
+	transaction pgx.Tx,
+	jobID uuid.UUID,
+	currentAttempt int,
+	maxAttempts int,
+	retryable bool,
+) error {
+	newAttempt := currentAttempt + 1
+
+	if !retryable {
+		_, err := transaction.Exec(
+			ctx,
+			`
+				UPDATE jobs
+				SET state = 'Failed',
+					current_attempt = $2,
+					updated_at = now()
+				WHERE id = $1
+			`,
+			jobID,
+			newAttempt,
+		)
+		return err
+	}
+
+	if newAttempt < maxAttempts {
+		_, err := transaction.Exec(
+			ctx,
+			`
+				UPDATE jobs
+				SET state 'PENDING',
+					current_attempt = $2,
+					updated_at = now()
+				WHERE id = $1
+			`,
+			jobID,
+			newAttempt,
+		)
+		return err
+	}
+
+	_, err := transaction.Exec(
+		ctx,
+		`
+			UPDATE jobs
+			SET state = 'FAILED',
+				current_attempt = $2,
+				updated_at = now()
+			WHERE id = $1
+		`,
+		jobID,
+		newAttempt,
+	)
+	return err
+}
