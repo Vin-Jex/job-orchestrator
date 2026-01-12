@@ -55,28 +55,27 @@ func (s *Store) CancelJob(
 	jobID uuid.UUID,
 ) error {
 	return s.WithTransaction(ctx, func(transaction pgx.Tx) error {
-		commandTag, err := transaction.Exec(
-			ctx,
-			`
-			UPDATE jobs
-			SET state = 'CANCELLED',
-				cancelled_at = now(),
-				updated_at = now()
-			WHERE id = $1
-				AND state NOT IN ('COMPLETED', 'FAILED', 'CANCELLED')
-			`,
-			jobID,
-		)
+		var state string
 
-		if err != nil {
+		if err := transaction.QueryRow(
+			ctx,
+			`SELECT state FROM jobs WHERE id = $1 FOR UPDATE`,
+			jobID,
+		).Scan(&state); err != nil {
 			return err
 		}
 
-		if commandTag.RowsAffected() == 0 {
-			return ErrInvalidStateTransition
+		if err := transitionJobState(ctx, transaction, jobID, state, JobCancelled); err != nil {
+			return err
 		}
 
-		return nil
+		_, err := transaction.Exec(
+			ctx,
+			`UPDATE jobs SET cancelled_at = now() WHERE id = $1`,
+			jobID,
+		)
+
+		return err
 	})
 }
 
@@ -132,9 +131,12 @@ func transitionJobState(
 	ctx context.Context,
 	transaction pgx.Tx,
 	jobID uuid.UUID,
-	previousState string,
-	nextState string,
+	to string,
+	from string,
 ) error {
+	if err := ValidateJobTransition(from, to); err != nil {
+		return err
+	}
 	commandTag, err := transaction.Exec(
 		ctx,
 		`
@@ -145,8 +147,8 @@ func transitionJobState(
 					AND state = $3
 		`,
 		jobID,
-		nextState,
-		previousState,
+		to,
+		from,
 	)
 	if err != nil {
 		return err
@@ -203,22 +205,10 @@ func (s *Store) AcquireScheduledJobForWorker(
 	return jobID, payload, nil
 }
 
-func (s *Store) MarkJobCompleted(
-	ctx context.Context,
-	jobID uuid.UUID,
-) error {
-	_, err := s.connectionPool.Exec(
-		ctx,
-		`
-			UPDATE jobs
-			SET state = 'COMPLETED',
-				updated_at = now()
-			WHERE id = $1
-				AND state = 'RUNNING'
-		`,
-		jobID,
-	)
-	return err
+func (s *Store) MarkJobCompleted(ctx context.Context, jobID uuid.UUID) error {
+	return s.WithTransaction(ctx, func(tx pgx.Tx) error {
+		return transitionJobState(ctx, tx, jobID, JobRunning, JobCompleted)
+	})
 }
 
 func (s *Store) MarkJobFailed(
@@ -227,22 +217,25 @@ func (s *Store) MarkJobFailed(
 	errMessage string,
 	retryable bool,
 ) error {
-	_, err := s.connectionPool.Exec(
-		ctx,
-		`
+	return s.WithTransaction(ctx, func(tx pgx.Tx) error {
+		if err := transitionJobState(ctx, tx, jobID, JobRunning, JobFailed); err != nil {
+			return err
+		}
+
+		_, err := tx.Exec(
+			ctx,
+			`
 			UPDATE jobs
-			SET state = 'FAILED',
-				last_error = $2,
-				retryable = $3,
-				updated_at = now()
+			SET last_error = $2,
+			    retryable = $3
 			WHERE id = $1
-				AND state = 'RUNNING'
-		`,
-		jobID,
-		errMessage,
-		retryable,
-	)
-	return err
+			`,
+			jobID,
+			errMessage,
+			retryable,
+		)
+		return err
+	})
 }
 
 func (s *Store) IsJobCancelled(
@@ -286,57 +279,35 @@ func (s *Store) CountRunningJobs(ctx context.Context) (int, error) {
 
 func (s *Store) RetryJobIfAllowed(
 	ctx context.Context,
-	transaction pgx.Tx,
+	tx pgx.Tx,
 	jobID uuid.UUID,
 	currentAttempt int,
 	maxAttempts int,
 	retryable bool,
 ) error {
-	newAttempt := currentAttempt + 1
-
 	if !retryable {
-		_, err := transaction.Exec(
-			ctx,
-			`
-				UPDATE jobs
-				SET state = 'Failed',
-					current_attempt = $2,
-					updated_at = now()
-				WHERE id = $1
-			`,
-			jobID,
-			newAttempt,
-		)
+		return nil
+	}
+
+	nextAttempt := currentAttempt + 1
+
+	if nextAttempt >= maxAttempts {
+		return nil
+	}
+
+	if err := transitionJobState(ctx, tx, jobID, JobFailed, JobPending); err != nil {
 		return err
 	}
 
-	if newAttempt < maxAttempts {
-		_, err := transaction.Exec(
-			ctx,
-			`
-				UPDATE jobs
-				SET state 'PENDING',
-					current_attempt = $2,
-					updated_at = now()
-				WHERE id = $1
-			`,
-			jobID,
-			newAttempt,
-		)
-		return err
-	}
-
-	_, err := transaction.Exec(
+	_, err := tx.Exec(
 		ctx,
 		`
-			UPDATE jobs
-			SET state = 'FAILED',
-				current_attempt = $2,
-				updated_at = now()
-			WHERE id = $1
+		UPDATE jobs
+		SET current_attempt = $2
+		WHERE id = $1
 		`,
 		jobID,
-		newAttempt,
+		nextAttempt,
 	)
 	return err
 }
