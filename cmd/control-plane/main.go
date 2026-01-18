@@ -12,9 +12,15 @@ import (
 	"github.com/Vin-Jex/job-orchestrator/internal/api"
 	"github.com/Vin-Jex/job-orchestrator/internal/observability"
 	"github.com/Vin-Jex/job-orchestrator/internal/store"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	
 	logger := observability.NewLogger("control-plane")
 
 	ctx, stop := signal.NotifyContext(

@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 
 	"github.com/Vin-Jex/job-orchestrator/internal/observability"
 	"github.com/Vin-Jex/job-orchestrator/internal/store"
@@ -15,6 +16,11 @@ import (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	logger := observability.NewLogger("worker")
 	workerID := uuid.New()
 
