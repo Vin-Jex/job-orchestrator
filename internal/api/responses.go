@@ -12,7 +12,7 @@ type CreateJobResponse struct {
 type JobResponse struct {
 	JobID          string     `json:"job_id"`
 	State          string     `json:"state"`
-	Payload        any        `json:"payload"`
+	Payload        []byte     `json:"payload"`
 	MaxAttempts    int        `json:"max_attempts"`
 	CurrentAttempt int        `json:"current_attempt"`
 	TimeoutSeconds int        `json:"timeout_seconds"`
