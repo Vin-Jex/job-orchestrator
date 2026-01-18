@@ -314,3 +314,95 @@ func (s *Store) RetryJobIfAllowed(
 	)
 	return err
 }
+
+func (s *Store) ListJobs(
+	ctx context.Context,
+	state *string,
+	limit int,
+) ([]Job, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+
+	var rows pgx.Rows
+	var err error
+
+	if state != nil {
+		rows, err = s.connectionPool.Query(
+			ctx,
+			`
+			SELECT 
+				id,
+				state,
+				payload,
+				max_attempts,
+				current_attempt,
+				timeout_seconds,
+				last_error,
+				created_at,
+				updated_at,
+				cancelled_at
+			FROM jobs
+			WHERE state = $1
+			ORDER BY created_at DESC
+			LIMIT $2
+			`,
+			*state,
+			limit,
+		)
+	} else {
+		rows, err = s.connectionPool.Query(
+			ctx,
+			`
+			SELECT
+				id,
+				state,
+				payload,
+				max_attempts,
+				current_attempt,
+				timeout_seconds,
+				last_error,
+				created_at,
+				updated_at,
+				cancelled_at
+			FROM jobs
+			ORDER BY created_at DESC
+			LIMIT $1
+			`,
+			limit,
+		)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var jobs []Job
+
+	for rows.Next() {
+		var job Job
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&job.Payload,
+			&job.MaxAttempts,
+			&job.CurrentAttempt,
+			&job.TimeoutSeconds,
+			&job.LastError,
+			&job.CreatedAt,
+			&job.UpdatedAt,
+			&job.CancelledAt,
+		); err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
+}
