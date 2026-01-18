@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Vin-Jex/job-orchestrator/internal/observability"
-	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/google/uuid"
+	"github.com/vin-jex/job-orchestrator/internal/observability"
+	"github.com/vin-jex/job-orchestrator/internal/store"
 )
 
 type Server struct {
@@ -31,7 +31,11 @@ func NewServer(storeLayer *store.Store, logger *slog.Logger) *Server {
 }
 
 func (s *Server) Handler() http.Handler {
-	return s.withRequestID(s.mux)
+	return withCORS(
+		s.withRequestID(
+			s.mux,
+		),
+	)
 }
 
 func (s *Server) withRequestID(next http.Handler) http.Handler {

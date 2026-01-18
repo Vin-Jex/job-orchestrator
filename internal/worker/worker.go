@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/google/uuid"
+	"github.com/vin-jex/job-orchestrator/internal/store"
 )
 
 type Worker struct {

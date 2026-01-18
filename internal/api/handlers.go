@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/google/uuid"
+	"github.com/vin-jex/job-orchestrator/internal/store"
 )
 
 // @Summary Create a new job
@@ -211,7 +211,7 @@ func (s *Server) handleListJobs(
 
 // @Summary Acquire job lease
 // @Description Scheduler-only endpoint to atomically lease a PENDING job
-// @Tags Internal Scheduler
+// @Tags Internal-Scheduler
 // @Accept json
 // @Produce json
 // @Param request body AcquireLeaseRequest true "Lease request"
@@ -259,7 +259,7 @@ func (s *Server) handleAcquireLease(
 
 // @Summary Recover expired leases
 // @Description Reclaim jobs whose leases have expired
-// @Tags Internal Scheduler
+// @Tags Internal-Scheduler
 // @Produce json
 // @Success 200 {object} RecoverLeasesResponse
 // @Failure 500 {string} string
@@ -292,7 +292,7 @@ func (s *Server) handleRecoverLeases(
 
 // @Summary Start job execution
 // @Description Transition a job from SCHEDULED to RUNNING
-// @Tags Internal Worker
+// @Tags Internal-Worker
 // @Produce json
 // @Param jobID path string true "Job ID"
 // @Success 200 {object} StartJobResponse
@@ -334,7 +334,7 @@ func (s *Server) handleStartJob(
 
 // @Summary Complete job
 // @Description Mark a RUNNING job as COMPLETED
-// @Tags Internal Worker
+// @Tags Internal-Worker
 // @Produce json
 // @Param jobID path string true "Job ID"
 // @Success 200 {object} CompleteJobResponse
@@ -376,7 +376,7 @@ func (s *Server) handleCompleteJob(
 
 // @Summary Fail job
 // @Description Mark a RUNNING job as FAILED with retry semantics
-// @Tags Internal Worker
+// @Tags Internal-Worker
 // @Accept json
 // @Produce json
 // @Param jobID path string true "Job ID"
@@ -436,7 +436,7 @@ func (s *Server) handleFailJob(
 
 // @Summary Worker heartbeat
 // @Description Record worker liveness for lease safety
-// @Tags Internal Worker
+// @Tags Internal-Worker
 // @Param workerID path string true "Worker ID"
 // @Success 204
 // @Failure 400 {string} string

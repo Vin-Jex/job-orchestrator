@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Vin-Jex/job-orchestrator/internal/observability"
-	"github.com/Vin-Jex/job-orchestrator/internal/scheduler"
-	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	"github.com/vin-jex/job-orchestrator/internal/observability"
+	"github.com/vin-jex/job-orchestrator/internal/scheduler"
+	"github.com/vin-jex/job-orchestrator/internal/store"
 )
 
 func main() {

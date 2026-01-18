@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 
-	"github.com/Vin-Jex/job-orchestrator/internal/observability"
-	"github.com/Vin-Jex/job-orchestrator/internal/store"
-	"github.com/Vin-Jex/job-orchestrator/internal/worker"
+	"github.com/vin-jex/job-orchestrator/internal/observability"
+	"github.com/vin-jex/job-orchestrator/internal/store"
+	"github.com/vin-jex/job-orchestrator/internal/worker"
 )
 
 func main() {

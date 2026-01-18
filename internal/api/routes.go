@@ -3,7 +3,7 @@ package api
 import httpSwagger "github.com/swaggo/http-swagger"
 
 func (s *Server) registerRoutes() {
-	s.mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+	s.mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	// Public
 	s.mux.HandleFunc("POST /v1/jobs", s.handleCreateJob)

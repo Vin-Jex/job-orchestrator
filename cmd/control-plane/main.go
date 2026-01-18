@@ -9,10 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Vin-Jex/job-orchestrator/internal/api"
-	"github.com/Vin-Jex/job-orchestrator/internal/observability"
-	"github.com/Vin-Jex/job-orchestrator/internal/store"
 	"github.com/joho/godotenv"
+	"github.com/vin-jex/job-orchestrator/internal/api"
+	"github.com/vin-jex/job-orchestrator/internal/observability"
+	"github.com/vin-jex/job-orchestrator/internal/store"
+
+	_ "github.com/vin-jex/job-orchestrator/docs"
 )
 
 // @title Distributed Job Orchestrator API
@@ -34,7 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	
+
 	logger := observability.NewLogger("control-plane")
 
 	ctx, stop := signal.NotifyContext(
