@@ -36,11 +36,13 @@ var allowedTransitions = map[string]map[string]bool{
 
 func ValidateJobTransition(from, to string) error {
 	if terminalStates[from] {
-		return fmt.Errorf("cannot transition from terminal state %s", from)
+		return fmt.Errorf("%w: cannot transition from terminal state %s",
+			ErrInvalidStateTransition, from)
 	}
 
 	if allowed, ok := allowedTransitions[from][to]; !ok || !allowed {
-		return fmt.Errorf("invalid job state transition from %s to %s", from, to)
+		return fmt.Errorf("%w: invalid transition from %s to %s",
+			ErrInvalidStateTransition, from, to)
 	}
 
 	return nil

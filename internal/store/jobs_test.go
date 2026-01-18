@@ -37,13 +37,13 @@ func TestCancelCompletedJobFails(t *testing.T) {
 	}
 
 	err := store.WithTransaction(ctx, func(tx pgx.Tx) error {
-		if err := transitionJobState(ctx, tx, jobID, JobPending, JobScheduled); err != nil {
+		if err := transitionJobState(ctx, tx, jobID, JobScheduled, JobPending); err != nil {
 			return err
 		}
-		if err := transitionJobState(ctx, tx, jobID, JobScheduled, JobRunning); err != nil {
+		if err := transitionJobState(ctx, tx, jobID, JobRunning, JobScheduled); err != nil {
 			return err
 		}
-		return transitionJobState(ctx, tx, jobID, JobRunning, JobCompleted)
+		return transitionJobState(ctx, tx, jobID, JobCompleted, JobRunning)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -64,20 +64,20 @@ func TestFailedJobCannotRun(t *testing.T) {
 	}
 
 	err := store.WithTransaction(ctx, func(tx pgx.Tx) error {
-		if err := transitionJobState(ctx, tx, jobID, JobPending, JobScheduled); err != nil {
+		if err := transitionJobState(ctx, tx, jobID, JobScheduled, JobPending); err != nil {
 			return err
 		}
-		if err := transitionJobState(ctx, tx, jobID, JobScheduled, JobRunning); err != nil {
+		if err := transitionJobState(ctx, tx, jobID, JobRunning, JobScheduled); err != nil {
 			return err
 		}
-		return transitionJobState(ctx, tx, jobID, JobRunning, JobFailed)
+		return transitionJobState(ctx, tx, jobID, JobFailed, JobRunning)
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = store.WithTransaction(ctx, func(tx pgx.Tx) error {
-		return transitionJobState(ctx, tx, jobID, JobFailed, JobRunning)
+		return transitionJobState(ctx, tx, jobID, JobRunning, JobFailed)
 	})
 
 	if !errors.Is(err, ErrInvalidStateTransition) {
