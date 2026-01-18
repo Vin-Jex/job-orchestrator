@@ -45,3 +45,8 @@ type StartJobResponse struct {
 	JobID string `json:"job_id"`
 	State string `json:"state"`
 }
+
+type CompleteJobResponse struct {
+	JobID string `json:"job_id"`
+	State string `json:"state"`
+}

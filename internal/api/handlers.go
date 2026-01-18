@@ -265,3 +265,35 @@ func (s *Server) handleStartJob(
 	writer.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(writer).Encode(response)
 }
+
+func (s *Server) handleCompleteJob(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	jobIDParam := request.PathValue("jobID")
+
+	jobID, err := uuid.Parse(jobIDParam)
+	if err != nil {
+		http.Error(writer, "invalid job id", http.StatusBadRequest)
+		return
+	}
+
+	err = s.store.CompleteJob(request.Context(), jobID)
+	if err != nil {
+		if err == store.ErrInvalidStateTransition {
+			http.Error(writer, "job cannot be completed", http.StatusConflict)
+			return
+		}
+
+		http.Error(writer, "failed to complete job", http.StatusInternalServerError)
+		return
+	}
+
+	response := CompleteJobResponse{
+		JobID: jobID.String(),
+		State: store.JobCompleted,
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(writer).Encode(response)
+}

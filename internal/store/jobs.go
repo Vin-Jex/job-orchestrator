@@ -233,7 +233,7 @@ func (s *Store) MarkJobRunning(
 			return ErrInvalidStateTransition
 		}
 
-		return transitionJobState(ctx, transaction, jobID, JobScheduled, JobRunning)
+		return transitionJobState(ctx, transaction, jobID, JobRunning, JobScheduled)
 	})
 }
 
@@ -434,4 +434,32 @@ func (s *Store) ListJobs(
 	}
 
 	return jobs, nil
+}
+
+func (s *Store) CompleteJob(
+	ctx context.Context,
+	jobID uuid.UUID,
+) error {
+	return s.WithTransaction(ctx, func(transaction pgx.Tx) error {
+		if err := transitionJobState(
+			ctx,
+			transaction,
+			jobID,
+			JobCompleted,
+			JobRunning,
+		); err != nil {
+			return err
+		}
+
+		_, err := transaction.Exec(
+			ctx,
+			`
+			DELETE FROM job_leases
+			WHERE job_id = $1
+			`,
+			jobID,
+		)
+
+		return err
+	})
 }
