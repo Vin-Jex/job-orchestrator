@@ -345,3 +345,23 @@ func (s *Server) handleFailJob(
 	writer.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(writer).Encode(response)
 }
+
+func (s *Server) handleWorkerHeartbeat(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	workerIDParam := request.PathValue("workerID")
+
+	workerID, err := uuid.Parse(workerIDParam)
+	if err != nil {
+		http.Error(writer, "invalid worker id", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.store.HeartbeatWorker(request.Context(), workerID); err != nil {
+		http.Error(writer, "failed to record heartbeat", http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusNoContent)
+}

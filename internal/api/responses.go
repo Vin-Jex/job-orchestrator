@@ -60,3 +60,8 @@ type FailJobResponse struct {
 	JobID string `json:"job_id"`
 	State string `json:"state"`
 }
+
+type RecoverJobsResponse struct {
+	RecoveredJobIDs []string `json:"recovered_job_ids"`
+}
+
