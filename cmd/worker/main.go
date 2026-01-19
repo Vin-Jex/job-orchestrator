@@ -28,10 +28,7 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	_ = godotenv.Load()
 
 	logger := observability.NewLogger("worker")
 	workerID := uuid.New()
