@@ -30,7 +30,6 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 
 // @BasePath /
-// @schemes http
 func main() {
 	_ = godotenv.Load()
 
