@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -52,14 +53,19 @@ func main() {
 	defer storeLayer.Close()
 
 	schedulerID := uuid.New()
+	s := scheduler.New(schedulerID, storeLayer, logger)
 
-	s := scheduler.New(
-		schedulerID,
-		storeLayer,
-		logger,
-	)
+	// Render keepalive HTTP server (infrastructure hack)
+	go func() {
+		if err := http.ListenAndServe(":8080", http.HandlerFunc(
+			func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+		)); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	go s.Run(ctx)
 	<-ctx.Done()
-
 }

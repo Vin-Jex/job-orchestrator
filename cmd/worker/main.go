@@ -15,6 +15,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -52,6 +53,17 @@ func main() {
 	defer storeLayer.Close()
 
 	w := worker.New(workerID, 4, storeLayer, logger)
+
+	// Render keepalive HTTP server (infrastructure hack)
+	go func() {
+		if err := http.ListenAndServe(":8080", http.HandlerFunc(
+			func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+		)); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	if err := w.Run(ctx); err != nil {
 		log.Fatal(err)
